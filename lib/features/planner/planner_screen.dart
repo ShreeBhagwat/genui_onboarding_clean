@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:genui_onboarding_clean/genui_core/genui_mini.dart';
 import 'package:genui_onboarding_clean/genui/genui_setup.dart';
 import 'package:genui_onboarding_clean/genui/surface_ids.dart';
@@ -37,6 +38,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
         setState(() {
           _session = session;
         });
+
+        // Listen to actions from GenUI components (like chip taps)
+        _session!.host.actionStream.listen((action) {
+          _sendMessage(action);
+        });
       }
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
@@ -56,6 +62,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
     'Plan 3 days in Kyoto in November, budget ₹70k, love cafes and temples',
     'Create a 5-day Paris itinerary, slow pace, art museums, vegetarian food',
     '2-day Goa weekend, low budget, beaches + nightlife',
+    'Show budget breakdown, weather, and some travel alerts for Singapore',
   ];
 
   Future<void> _sendMessage([String? text]) async {
@@ -117,58 +124,102 @@ class _PlannerScreenState extends State<PlannerScreen> {
               )
             : null,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: travelSurfaceIds.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return _hasStarted
-                      ? const SizedBox.shrink()
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: _samplePrompts
-                              .map((prompt) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 8.0),
-                                    child: ActionChip(
-                                      label: Text(prompt),
-                                      onPressed: () => _sendMessage(prompt),
-                                    ),
-                                  ))
-                              .toList(),
-                        );
-                }
+      body: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                itemCount: travelSurfaceIds.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return _hasStarted
+                        ? const SizedBox.shrink()
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: _samplePrompts
+                                .map((prompt) => Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 12.0),
+                                      child: ActionChip(
+                                        padding: const EdgeInsets.all(12),
+                                        label: Text(
+                                          prompt,
+                                          style:
+                                              GoogleFonts.outfit(fontSize: 15),
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          side: BorderSide(
+                                              color:
+                                                  Colors.teal.withOpacity(0.3)),
+                                        ),
+                                        backgroundColor: Colors.teal.shade50,
+                                        onPressed: () => _sendMessage(prompt),
+                                      ),
+                                    ))
+                                .toList(),
+                          );
+                  }
 
-                final id = travelSurfaceIds[index - 1];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(id, style: Theme.of(context).textTheme.labelSmall),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          border:
-                              Border.all(color: Colors.grey.withOpacity(0.2)),
-                          borderRadius: BorderRadius.circular(12),
+                  final id = travelSurfaceIds[index - 1];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding:
+                              const EdgeInsets.only(left: 8.0, bottom: 8.0),
+                          child: Text(
+                            id.toUpperCase(),
+                            style: GoogleFonts.outfit(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.2,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
                         ),
-                        clipBehavior: Clip.hardEdge,
-                        child: GenUiSurface(
-                          host: _session!.host,
-                          surfaceId: id,
+                        Container(
+                          decoration: BoxDecoration(
+                            // Transparent because the components themselves now have cards/shadows
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          clipBehavior: Clip.none, // Allow shadows to spill
+                          child: GenUiSurface(
+                            host: _session!.host,
+                            surfaceId: id,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          MessageInputBar(controller: _inputController, onSend: _sendMessage),
-        ],
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: MessageInputBar(
+                  controller: _inputController, onSend: _sendMessage),
+            ),
+          ],
+        ),
       ),
     );
   }
